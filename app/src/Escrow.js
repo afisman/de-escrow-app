@@ -1,37 +1,45 @@
+import { Button, Td, Tr } from "@chakra-ui/react";
+import useContract from "./useContract";
+
 export default function Escrow({
   address,
+  account,
+  depositor,
   arbiter,
   beneficiary,
+  isApproved,
   value,
-  handleApprove,
 }) {
-  return (
-    <div className="existing-contract">
-      <ul className="fields">
-        <li>
-          <div> Arbiter </div>
-          <div> {arbiter} </div>
-        </li>
-        <li>
-          <div> Beneficiary </div>
-          <div> {beneficiary} </div>
-        </li>
-        <li>
-          <div> Value </div>
-          <div> {value} </div>
-        </li>
-        <div
-          className="button"
-          id={address}
-          onClick={(e) => {
-            e.preventDefault();
 
-            handleApprove();
-          }}
-        >
-          Approve
-        </div>
-      </ul>
-    </div>
+  const canApprove = arbiter.toString().toLoweCase() === account.account.toString().toLowerCase();
+
+  const { getContractByAddress, provider } = useContract();
+
+  const approve = async () => {
+    if (!canApprove) return;
+
+    const escrowContract = getContractByAddress(address);
+    const signer = provider.getSigner();
+    const approveTxn = await escrowContract.connect(signer).approve();
+    await approveTxn.wait();
+  }
+
+
+  return (
+    <Tr>
+      <Td>{depositor}</Td>
+      <Td>{arbiter}</Td>
+      <Td>{beneficiary}</Td>
+      <Td>{value} ETH</Td>
+      <Td>
+        {isApproved ? (
+          "Approved"
+        ) : isAllowedToApprove ? (
+          <Button onClick={() => approve()}>Approve</Button>
+        ) : (
+          "Pending Approval"
+        )}
+      </Td>
+    </Tr>
   );
 }
